@@ -96,20 +96,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      pull-requests: write
+      issues: write
+      pull-requests: read
     concurrency:
       group: review-gate-pr-${{ needs.resolve.outputs.number }}
       cancel-in-progress: false
     steps:
+      - name: 获取 Timi AI Bot 凭据
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.TIMI_AI_APP_ID }}
+          private-key: ${{ secrets.TIMI_AI_PRIVATE_KEY }}
+          permission-pull-requests: read
+          permission-issues: write
+
       - name: 发布首次审查命令评论
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUMBER: ${{ needs.resolve.outputs.number }}
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ steps.bot-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
+            const CODERABBIT_MARKER = '<!-- review-gate: coderabbit-trigger -->';
+            const GREPTILE_MARKER = '<!-- review-gate: greptile-trigger -->';
 
             const currentPullRequest = await github.rest.pulls.get({
               owner,
@@ -131,30 +143,27 @@ jobs:
               issue_number: issueNumber,
               per_page: 100,
             });
-            const automaticCommands = new Set([
-              '@coderabbitai review',
-              '@greptileai review',
-            ]);
-            const hasAutomaticCommand = comments.some(
-              (comment) =>
-                comment.user?.login === 'github-actions[bot]' &&
-                automaticCommands.has(comment.body),
-            );
+            const hasCodeRabbit = comments.some((c) => c.body?.includes(CODERABBIT_MARKER));
+            const hasGreptile = comments.some((c) => c.body?.includes(GREPTILE_MARKER));
 
-            if (hasAutomaticCommand) {
-              core.info('跳过：PR 已执行过首次自动审查触发。');
-              return;
+            if (!hasCodeRabbit) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: `${CODERABBIT_MARKER}\n@coderabbitai review`,
+              });
+            } else {
+              core.info('跳过：已存在 CodeRabbit 审查命令评论。');
             }
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: '@coderabbitai review',
-            });
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: '@greptileai review',
-            });
+            if (!hasGreptile) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: `${GREPTILE_MARKER}\n@greptileai review`,
+              });
+            } else {
+              core.info('跳过：已存在 Greptile 审查命令评论。');
+            }

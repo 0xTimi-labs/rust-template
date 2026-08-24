@@ -1,7 +1,6 @@
 name: Cache Cleanup
 
-# PR 缓存生命周期管理：当 PR 合并或关闭时，自动清除该 PR 独占的分支缓存，
-# 确保仓库仅维护 main 分支的有效基线缓存，防止 10GB 存储池因历史 PR 堆积膨胀。
+# PR 生命周期管理：当 PR 合并或关闭时，自动清除该 PR 独占的分支编译缓存与 AI 审查会话工件。
 
 on:
   pull_request:
@@ -13,7 +12,7 @@ permissions:
 
 jobs:
   cleanup:
-    name: 清理已关闭 PR 缓存
+    name: 清理已关闭 PR 缓存与会话
     runs-on: ubuntu-latest
     steps:
       - name: 删除当前 PR 命名空间下的所有缓存与会话工件
@@ -22,9 +21,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # 1. 删除当前 PR 的分支独占缓存
-          gh cache list --ref "refs/pull/${PR_NUMBER}/merge" --limit 100 --json id --jq '.[].id' | xargs -r -n 1 gh cache delete
-          # 2. 物理销毁当前 PR 的所有历史 AI 审查会话工件
+          # 1. 删除当前 PR 的分支独占编译缓存
+          gh cache delete --all --ref "refs/pull/${PR_NUMBER}/merge" 2>/dev/null || true
+          # 2. 物理销毁当前 PR 的 AI 审查会话工件
           gh api --paginate "repos/${GH_REPO}/actions/artifacts" \
-            --jq ".artifacts[] | select(.name | startswith(\"pi-session-pr-${PR_NUMBER}\")) | .id" \
-            | xargs -r -n 1 gh api --method DELETE "repos/${GH_REPO}/actions/artifacts/{}"
+            --jq ".artifacts[] | select(.name == \"pi-session-pr-${PR_NUMBER}\") | .id" \
+            | xargs -r -I{} gh api --method DELETE "repos/${GH_REPO}/actions/artifacts/{}"
