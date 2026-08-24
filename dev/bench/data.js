@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787587261545,
+  "lastUpdate": 1787588254611,
   "repoUrl": "https://github.com/0xTimi-labs/rust-template",
   "entries": {
     "Benchmark": [
@@ -58,6 +58,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "parse_setting/typical-line",
             "value": 31,
+            "range": "± 0",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "0xtimi2233@gmail.com",
+            "name": "0xTimi2233",
+            "username": "0xTimi2233"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "a0be5d08dbe9702ad86a1a615aefc12fe4a5fec9",
+          "message": "docs: 更新 CI 流水线、AI 审查门禁与凭据配置指南 (#11)\n\n* docs: 更新 CI 流水线、AI 审查门禁与凭据配置指南\n\n同步更新 GitHub Actions 架构、Review Gate 独立签名去重、GitHub App 凭据与 Actions 依赖版本基线。\n\n* fix(ci): 配置 App 凭据为 pull-requests write 权限",
+          "timestamp": "2026-08-24T16:15:01Z",
+          "tree_id": "fb5760fc9a1009b367e7939647887ac2225bc369",
+          "url": "https://github.com/0xTimi-labs/rust-template/commit/a0be5d08dbe9702ad86a1a615aefc12fe4a5fec9"
+        },
+        "date": 1787588254139,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_setting/typical-line",
+            "value": 32,
             "range": "± 0",
             "unit": "ns/iter"
           }
