@@ -10,11 +10,12 @@ export interface ReviewConfig {
   eventName: string;
   commentBody: string;
   runnerTemp: string;
+  botToken: string;
 }
 
 export function parseReviewMode(eventName: string, commentBody: string): boolean {
   if (eventName === "issue_comment") {
-    return commentBody.includes("-c") || commentBody.includes("--continue");
+    return /(?:^|\s)(?:-c|--continue)(?=\s|$)/.test(commentBody);
   }
   return eventName === "workflow_dispatch";
 }
@@ -23,11 +24,15 @@ export class GitHubClient {
   constructor(
     private repo: string,
     private prNumber: string,
+    private botToken: string,
   ) {}
 
   private run(args: string[]): string {
     const proc = spawnSync("gh", args, {
-      env: process.env,
+      env: {
+        ...process.env,
+        GH_TOKEN: this.botToken,
+      },
       encoding: "utf-8",
       maxBuffer: MAX_BUFFER_SIZE,
     });
@@ -88,7 +93,10 @@ export class GitHubClient {
       "gh",
       ["api", `repos/${this.repo}/actions/artifacts/${artifactId}/zip`],
       {
-        env: process.env,
+        env: {
+          ...process.env,
+          GH_TOKEN: this.botToken,
+        },
         maxBuffer: MAX_BUFFER_SIZE,
       },
     );
@@ -105,8 +113,8 @@ export class GitHubClient {
 }
 
 export function runReview(config: ReviewConfig): void {
-  const { prNumber, repo, eventName, commentBody, runnerTemp } = config;
-  const client = new GitHubClient(repo, prNumber);
+  const { prNumber, repo, eventName, commentBody, runnerTemp, botToken } = config;
+  const client = new GitHubClient(repo, prNumber, botToken);
 
   const commentId = client.createPlaceholderComment();
   const sessionDir = join(runnerTemp, "pi-session");
@@ -136,11 +144,16 @@ export function runReview(config: ReviewConfig): void {
     }
     piArgs.push("--session-dir", sessionDir, "/review branch main");
 
+    const piEnv: NodeJS.ProcessEnv = {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      USER: process.env.USER,
+      TMPDIR: runnerTemp,
+      PI_CODING_AGENT_DIR: join(runnerTemp, "pi-agent"),
+    };
+
     const proc = spawnSync("pi", piArgs, {
-      env: {
-        ...process.env,
-        PI_CODING_AGENT_DIR: join(runnerTemp, "pi-agent"),
-      },
+      env: piEnv,
       encoding: "utf-8",
       maxBuffer: MAX_BUFFER_SIZE,
     });
@@ -169,10 +182,11 @@ if (import.meta.main) {
     eventName: process.env.EVENT_NAME || process.env.GITHUB_EVENT_NAME || "",
     commentBody: process.env.COMMENT_BODY || "",
     runnerTemp: process.env.RUNNER_TEMP || "/tmp",
+    botToken: process.env.BOT_TOKEN || "",
   };
 
-  if (!config.prNumber || !config.repo) {
-    process.stderr.write("Missing PR_NUMBER or GH_REPO configuration.\n");
+  if (!config.prNumber || !config.repo || !config.botToken) {
+    process.stderr.write("Missing PR_NUMBER, GH_REPO, or BOT_TOKEN configuration.\n");
     process.exit(1);
   }
 
