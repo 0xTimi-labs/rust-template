@@ -279,14 +279,15 @@ PR 提交 → CI（ci.yml 编排）全部通过
        ├─ 仅处理 pull_request 且 conclusion=success
        ├─ 定位对应 PR（fork 用来源仓库+分支反查）
        ├─ 校验 PR 已 Ready 且当前 head.sha 与运行 head_sha 一致
-       ├─ 未存在自动命令评论 → 发布 @coderabbitai review / @greptileai review
-       └─ 后续提交：命令已存在 → 跳过；由维护者手动评论触发复审
+       ├─ 独立签名去重判定（coderabbit-trigger 与 greptile-trigger）
+       ├─ 未存在命令评论 → 使用 App Token 独立发布 @coderabbitai review / @greptileai review
+       └─ 后续提交：各工具独立跳过已发评论，仅补发缺失项
 ```
 
 **维护约定**：
 
 - `workflow_run` 类 workflow 只从**默认分支上的版本**生效——修改 review-gate.yml 必须先合入默认分支。
-- 首次触发若只成功发布一条命令，需根据失败日志手动补发另一条（此后自动流程不再重发）。
+- 采用独立 Marker 签名，部分发布失败时在后续成功 CI 自动补发缺失项，已发布项绝不重复触发。
 - AI 审查是顾问，不是合并门禁；确定性门禁仍由 ruleset 的 required checks 与 merge queue 负责。
 
 ## 8. 何时 push main
