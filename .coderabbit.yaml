@@ -1,0 +1,35 @@
+# CodeRabbit 审查配置：只保留审查意见本体，装饰性内容全部关闭
+# 文档：https://docs.coderabbit.ai/reference/configuration
+
+language: zh-CN # 评论使用中文
+
+# 自动审查和自动增量审查均关闭；首次 CI 成功时由 Review Gate 发布命令评论，
+# 后续提交由维护者手动评论触发。
+reviews:
+  review_status: false # 不发布“审查跳过/无法进行”状态评论（如 Review skipped）
+  review_progress: false # 不向 PR checks 发布审查进度/状态
+  commit_status: false # 连带关闭 legacy commit status（仅 review_progress 关闭时生效）
+
+  enable_prompt_for_ai_agents: false # inline 评论不含 AI Agent 提示段
+  in_progress_fortune: false # 审查中不发占位/幸运消息评论
+
+  auto_review:
+    enabled: false
+    auto_incremental_review: false
+
+  profile: quiet # 安静档：只报最重要的发现
+  high_level_summary: false # 不改写 PR 描述
+  high_level_summary_in_walkthrough: true # 摘要放进审查评论
+  collapse_walkthrough: false # 走查/摘要默认展开
+
+  # ---- 关闭全部装饰性输出 ----
+  changed_files_summary: false
+  estimate_code_review_effort: false
+  assess_linked_issues: false
+  related_issues: false
+  related_prs: false
+  suggested_labels: false
+  suggested_reviewers: false
+
+  path_filters:
+    - "!web/dist/**" # 构建产物不审

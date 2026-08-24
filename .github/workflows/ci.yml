@@ -1,0 +1,40 @@
+name: CI
+
+# 测试与安全门禁的编排者：并行调用 checks.yml（测试/构建）与 security.yml（安全），
+# CI run 完成即代表全部门禁通过，Review Gate 监听 CI 即可获得原生等待语义。
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  # 合并队列内再次验证（ruleset 启用了 merge queue，required checks 必须监听此事件）
+  merge_group:
+  # 定时全量安全扫描：覆盖存量代码 + 用最新检测规则复查历史代码
+  schedule:
+    - cron: "30 23 * * 0" # UTC 周日 23:30 ≈ 北京周一 07:30（上班前出结果）
+
+permissions:
+  contents: read
+
+# 同一 PR 连续 push 时只保留最新一次运行（防抖）；
+# 以 SHA 分组而非 PR 号：Webhook 投递顺序不保证，按 PR 号会让旧 SHA 的迟到事件取消新 run
+concurrency:
+  group: ci-${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 测试与构建门禁：checks.yml 内 bench 需要写权限（gh-pages 基线）
+  checks:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/checks.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # 安全门禁：CodeQL 需要 SARIF 上传权限
+  security:
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/security.yml

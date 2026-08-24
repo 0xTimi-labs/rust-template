@@ -1,0 +1,63 @@
+[workspace]
+resolver = "3"
+members = ["crates/core", "crates/cli"]
+
+default-members = ["crates/core", "crates/cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "MIT"
+repository = "https://github.com/0xTimi-labs/rust-template"
+
+[workspace.dependencies]
+oss-core = { path = "crates/core", version = "=0.1.0" }
+clap = { version = "4", features = ["derive"] }
+criterion = { version = "0.8", features = ["html_reports"] }
+
+# 全仓 clippy 规范：生产代码禁止 unwrap/expect/panic，
+# 测试代码的豁免由 clippy.toml 的 allow-unwrap-in-tests 控制
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unwrap_in_result = "deny"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+strip = true
+lto = "thin"
+
+# cargo-dist 的 dist 构建 profile（构建 release 产物基于它，缺失会导致发布失败）
+[profile.dist]
+inherits = "release"
+
+# cargo-dist 发布配置：tag 推送时自动产出全平台二进制
+# tag 须与 workspace.package.version 一致；预发布需将包版本改为带后缀（如 0.1.0-beta.1）再打同名义 tag
+[workspace.metadata.dist]
+# release.yml 含手工安全加固（SHA 锁定/权限收敛/tag 防注入），
+# 声明 CI 生成物允许偏离模板，否则 dist 拒绝执行
+allow-dirty = ["ci"]
+cargo-dist-version = "0.32.0"
+ci = "github"
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+]
+installers = ["shell", "powershell"]
+
+# 用 ubuntu-latest 替代生成器默认的固定版本 runner
+# global 只影响 plan/upload 等辅助 job，各目标平台需逐一指定
+[workspace.metadata.dist.github-custom-runners]
+global = "ubuntu-latest"
+x86_64-unknown-linux-gnu = "ubuntu-latest"
+aarch64-unknown-linux-gnu = "ubuntu-latest"
+x86_64-apple-darwin = "macos-latest"
+aarch64-apple-darwin = "macos-latest"
+x86_64-pc-windows-msvc = "windows-latest"

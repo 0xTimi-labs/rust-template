@@ -1,0 +1,17 @@
+# Codecov 覆盖率报告展示规则
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    # 不设硬性阈值卡 PR：覆盖率用来发现盲区，不用来刷指标
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default

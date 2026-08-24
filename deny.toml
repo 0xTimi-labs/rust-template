@@ -1,0 +1,48 @@
+# cargo-deny 配置：依赖漏洞、许可证合规、重复依赖检查
+# 文档：https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# 检查所有平台的目标（windows/mac 的条件依赖也要扫）
+all-features = true
+
+[output]
+feature-depth = 1
+
+# 依赖漏洞：对接 RustSec 公告库
+[advisories]
+version = 2
+yanked = "warn"
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# 允许 workspace 内部用 path 依赖（否则 cli → oss-core 会被误判为 wildcard）
+allow-wildcard-paths = true
+highlight = "all"
+
+[sources]
+# 未知源直接拒绝，例外走显式 allow-registry / allow-git
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+
+# 许可证白名单：开源项目必须防止引入 GPL 等传染性许可
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CDLA-Permissive-2.0",
+]
+
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
