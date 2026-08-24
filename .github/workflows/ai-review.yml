@@ -51,6 +51,9 @@ jobs:
         with:
           app-id: ${{ secrets.TIMI_AI_APP_ID }}
           private-key: ${{ secrets.TIMI_AI_PRIVATE_KEY }}
+          permission-pull-requests: read
+          permission-issues: write
+          permission-actions: read
 
       - name: 安装 Bun 运行时
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
