@@ -1,0 +1,43 @@
+name: 缺陷报告 (Bug Report)
+description: 提交可在使用过程中稳定复现的缺陷或异常行为。
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提交缺陷报告。请尽可能详尽地填写以下信息以协助排查与修复。
+  - type: textarea
+    id: description
+    attributes:
+      label: 缺陷描述
+      description: 清晰、简要地描述遇到的异常行为。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 提供可逐步复现该问题的详细步骤、输入内容或代码片段。
+      placeholder: |
+        1. 执行命令 '...'
+        2. 输入参数 '...'
+        3. 观察到错误输出 '...'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 描述在正常情况下应当出现的预期结果。
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境
+      description: 操作系统版本、CLI 版本或浏览器环境等。
+      placeholder: |
+        * 操作系统: macOS / Linux / Windows
+        * 软件版本: v0.1.0
+    validations:
+      required: false

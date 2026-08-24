@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bunx --bun vite",
     "build": "bunx --bun vite build",
+    "preview": "bunx --bun vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "e2e": "bun run build && playwright test",
     "lint": "biome check .",
     "format": "biome format --write ."
