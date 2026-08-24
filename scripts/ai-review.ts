@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const MAX_BUFFER_SIZE = 50 * 1024 * 1024;
+const MAX_COMMENT_LENGTH = 65000;
 
 export interface ReviewConfig {
   prNumber: string;
@@ -163,7 +164,12 @@ export function runReview(config: ReviewConfig): void {
     }
 
     const output = proc.stdout?.trim() || "未检测到审查意见。";
-    writeFileSync(outputFile, output, "utf-8");
+    const body =
+      output.length > MAX_COMMENT_LENGTH
+        ? `${output.slice(0, MAX_COMMENT_LENGTH)}\n\n---\n审查内容超出评论长度上限，已截断。完整内容请查看 Actions 运行日志。`
+        : output;
+
+    writeFileSync(outputFile, body, "utf-8");
     client.updateComment(commentId, outputFile);
   } catch (error) {
     try {

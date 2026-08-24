@@ -26,4 +26,4 @@ jobs:
           # 2. 物理销毁当前 PR 的 AI 审查会话工件
           gh api --paginate "repos/${GH_REPO}/actions/artifacts" \
             --jq ".artifacts[] | select(.name == \"pi-session-pr-${PR_NUMBER}\") | .id" \
-            | xargs -r -n 1 gh api --method DELETE "repos/${GH_REPO}/actions/artifacts/{}"
+            | xargs -r -I{} gh api --method DELETE "repos/${GH_REPO}/actions/artifacts/{}"

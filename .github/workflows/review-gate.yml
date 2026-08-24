@@ -132,27 +132,6 @@ jobs:
               return;
             }
 
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner,
-              repo,
-              issue_number: issueNumber,
-              per_page: 100,
-            });
-            const automaticCommands = new Set([
-              '@coderabbitai review',
-              '@greptileai review',
-            ]);
-            const hasAutomaticCommand = comments.some(
-              (comment) =>
-                (comment.user?.type === 'Bot' || comment.user?.login.endsWith('[bot]')) &&
-                automaticCommands.has(comment.body),
-            );
-
-            if (hasAutomaticCommand) {
-              core.info('跳过：PR 已执行过首次自动审查触发。');
-              return;
-            }
-
             await github.rest.issues.createComment({
               owner,
               repo,
