@@ -47,7 +47,7 @@ gh repo create OWNER/REPO --public --source=. --push
 | `PI_AUTH_JSON` | Repository secret | 自建 AI 审查引擎认证凭据 |
 | `AI_REVIEW_ENABLED` | Repository variable | AI 审查开关（设为 `true` 启用） |
 
-Review Gate 与 AI Review 采用专用 GitHub App 凭据（`TIMI_AI_APP_ID` 与 `TIMI_AI_PRIVATE_KEY`）生成短期 Installation Token，并严格收敛权限范围（`pull-requests: read`、`issues: write`、`actions: read`）。Greptile 与 CodeRabbit 通过官方 App 接入仓库。工作流之间采用显式 Secret Mapping 传递凭据（遵循最小权限原则）。Gitleaks 采用官方 MIT 开源 CLI 原生执行，无需配置商业 License。
+Review Gate 与 AI Review 采用专用 GitHub App 凭据（`TIMI_AI_APP_ID` 与 `TIMI_AI_PRIVATE_KEY`）生成短期 Installation Token，并严格收敛权限范围（`pull-requests: write`、`actions: read`）。Greptile 与 CodeRabbit 通过官方 App 接入仓库。工作流之间采用显式 Secret Mapping 传递凭据（遵循最小权限原则）。Gitleaks 采用官方 MIT 开源 CLI 原生执行，无需配置商业 License。
 
 ### 3. 【人工】将自动化文件同步到默认分支
 

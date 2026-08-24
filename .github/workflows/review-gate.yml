@@ -96,8 +96,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      pull-requests: write
       issues: write
-      pull-requests: read
     concurrency:
       group: review-gate-pr-${{ needs.resolve.outputs.number }}
       cancel-in-progress: false
@@ -108,8 +108,7 @@ jobs:
         with:
           app-id: ${{ secrets.TIMI_AI_APP_ID }}
           private-key: ${{ secrets.TIMI_AI_PRIVATE_KEY }}
-          permission-pull-requests: read
-          permission-issues: write
+          permission-pull-requests: write
 
       - name: 发布首次审查命令评论
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
