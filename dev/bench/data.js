@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787588254611,
+  "lastUpdate": 1787589263764,
   "repoUrl": "https://github.com/0xTimi-labs/rust-template",
   "entries": {
     "Benchmark": [
@@ -88,6 +88,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "parse_setting/typical-line",
             "value": 32,
+            "range": "± 0",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "0xtimi2233@gmail.com",
+            "name": "0xTimi2233",
+            "username": "0xTimi2233"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c6c42984f38ee6d023e21afd79c69fdbcf755bc5",
+          "message": "chore(deps): 升级 CodeQL Action 至最新摘要并补充边界测试 (#13)\n\n* chore(deps): 升级 CodeQL Action 至最新摘要并补充零值边界测试\n\n升级 github/codeql-action 固定 SHA 摘要，补充 core 配置解析边界测试用例。\n\nCloses #6\n\n* style(core): 为测试用例结构体字面量添加尾随逗号",
+          "timestamp": "2026-08-24T16:31:48Z",
+          "tree_id": "978429568646b9e878c4dca8bd32cd6ce55bd2f7",
+          "url": "https://github.com/0xTimi-labs/rust-template/commit/c6c42984f38ee6d023e21afd79c69fdbcf755bc5"
+        },
+        "date": 1787589262783,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_setting/typical-line",
+            "value": 33,
             "range": "± 0",
             "unit": "ns/iter"
           }
