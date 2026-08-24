@@ -1,24 +1,11 @@
 name: 缺陷报告 (Bug Report)
-description: 提交可在代码库中稳定复现的缺陷或异常行为。
+description: 提交可在使用过程中稳定复现的缺陷或异常行为。
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
         感谢提交缺陷报告。请尽可能详尽地填写以下信息以协助排查与修复。
-  - type: dropdown
-    id: component
-    attributes:
-      label: 受影响模块
-      description: 选择发生问题的组件或子系统。
-      options:
-        - "crates/core (核心逻辑)"
-        - "crates/cli (命令行入口)"
-        - "web (前端界面)"
-        - "ci (.github 自动化流水线)"
-        - "其他"
-    validations:
-      required: true
   - type: textarea
     id: description
     attributes:
@@ -30,7 +17,7 @@ body:
     id: reproduction
     attributes:
       label: 复现步骤
-      description: 提供可逐步复现该问题的详细步骤或最小代码片段。
+      description: 提供可逐步复现该问题的详细步骤、输入内容或代码片段。
       placeholder: |
         1. 执行命令 '...'
         2. 输入参数 '...'
@@ -48,10 +35,9 @@ body:
     id: environment
     attributes:
       label: 运行环境
-      description: 操作系统、Rust 版本或 Bun 运行时信息。
+      description: 操作系统版本、CLI 版本或浏览器环境等。
       placeholder: |
         * 操作系统: macOS / Linux / Windows
-        * Rust 版本: 1.98.0
-        * Bun 版本: 1.4.0
+        * 软件版本: v0.1.0
     validations:
       required: false
