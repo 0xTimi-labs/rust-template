@@ -48,3 +48,14 @@ fn handles_valid_positive_number() {
         })
     );
 }
+
+#[test]
+fn handles_zero_value() {
+    assert_eq!(
+        parse_setting("offset = 0"),
+        Ok(Setting {
+            name: "offset".into(),
+            value: 0
+        })
+    );
+}
