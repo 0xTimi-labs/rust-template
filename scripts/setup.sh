@@ -58,7 +58,7 @@ sedi "s|# rust-template|# ${NEW_NAME}|g" "${ROOT_DIR}/README.md"
 echo "📦 正在刷新依赖 Lockfiles..."
 (cd "${ROOT_DIR}" && cargo check --workspace --quiet)
 if [ -d "${ROOT_DIR}/web" ] && command -v bun &>/dev/null; then
-  (cd "${ROOT_DIR}/web" && bun install --quiet && bun run build --quiet)
+  (cd "${ROOT_DIR}/web" && bun install --quiet && bun run build >/dev/null)
 fi
 
 # 8. 自毁脚本自身
