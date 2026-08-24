@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787589263764,
+  "lastUpdate": 1787590118650,
   "repoUrl": "https://github.com/0xTimi-labs/rust-template",
   "entries": {
     "Benchmark": [
@@ -118,6 +118,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "parse_setting/typical-line",
             "value": 33,
+            "range": "± 0",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "0xtimi2233@gmail.com",
+            "name": "0xTimi2233",
+            "username": "0xTimi2233"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07f3d9b8653dda609bdd52930e2c75a840a0fc1c",
+          "message": "chore(deps): 升级 Bun 运行时版本基线至 v1.4.0 (#14)\n\n升级前端与 AI 审查工作流中的 Bun 运行时至 v1.4.0，同步更新 AGENTS.md 版本基线规范。\n\nCloses #6",
+          "timestamp": "2026-08-24T16:45:44Z",
+          "tree_id": "f0edb039b2d716e2779302885dad816ae6f3df59",
+          "url": "https://github.com/0xTimi-labs/rust-template/commit/07f3d9b8653dda609bdd52930e2c75a840a0fc1c"
+        },
+        "date": 1787590117644,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_setting/typical-line",
+            "value": 30,
             "range": "± 0",
             "unit": "ns/iter"
           }
