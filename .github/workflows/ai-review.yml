@@ -70,18 +70,40 @@ jobs:
           printf '%s' "$PI_AUTH_JSON" > "$RUNNER_TEMP/pi-agent/auth.json"
           chmod 600 "$RUNNER_TEMP/pi-agent/auth.json"
 
+      - name: 恢复历史 Review 会话
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pi"
+          ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/artifacts?name=pi-session-pr-${PR_NUMBER}" --jq '.artifacts[0].id // empty')
+          if [ -n "$ARTIFACT_ID" ]; then
+            gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > "$RUNNER_TEMP/session.zip"
+            unzip -q -o "$RUNNER_TEMP/session.zip" -d "$RUNNER_TEMP/pi/"
+          fi
+
       - name: 运行审查
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.inputs.pr_number }} # 经环境变量传入，避免内插进 shell
+          PI_CODING_AGENT_DIR: ${{ runner.temp }}/pi-agent
         run: |
           set -o pipefail
           # 审查规范取自可信的 main 分支，而非被审 PR 的 head，防指令注入
           git show origin/main:REVIEW_GUIDELINES.md > "$RUNNER_TEMP/guidelines.md"
-          pi -p --approve --no-session "审查 PR #${PR_NUMBER}，
+          pi -p --approve --session "$RUNNER_TEMP/pi/session.jsonl" "审查 PR #${PR_NUMBER}，
           按以下规范输出分级 findings 和 verdict。不要修改任何代码。
           规范内容：$(cat "$RUNNER_TEMP/guidelines.md")" | tee review-output.md
+
+      - name: 保存审查会话
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: pi-session-pr-${{ github.event.inputs.pr_number }}
+          path: ${{ runner.temp }}/pi/session.jsonl
+          retention-days: 15
+          overwrite: true
 
       - name: 发布审查意见
         env:
