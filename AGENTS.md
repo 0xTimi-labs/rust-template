@@ -20,7 +20,7 @@ rust-template/
 ## 2. 核心技术栈与版本基线
 
 * **Rust 工具链**：1.98.0（2024 Edition，MSRV 1.98）
-* **前端运行时**：Bun 1.3.14（严禁引入 Node.js / npm）
+* **前端运行时**：Bun 1.4.0（严禁引入 Node.js / npm）
 * **包管理器与构建**：Cargo（Rust）、Bun（Web）、Vite（前端打包）、Biome（前端 Lint/Format）
 * **测试框架**：内置 `cargo test`、`criterion`（基准测试）、`playwright`（E2E 断言与快照）
 
