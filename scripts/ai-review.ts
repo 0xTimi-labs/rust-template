@@ -170,9 +170,8 @@ export function runReview(config: ReviewConfig): void {
       mkdirSync(sessionDir, { recursive: true });
     }
 
-    if (!existsSync(".pi")) {
-      mkdirSync(".pi", { recursive: true });
-    }
+    rmSync(".pi", { recursive: true, force: true });
+    mkdirSync(".pi", { recursive: true });
 
     const piArgs = ["-p", "--approve"];
     if (wantsContinue && hasSession) {
