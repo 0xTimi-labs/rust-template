@@ -122,7 +122,7 @@ export class GitHubClient {
       process.stderr.write(
         `恢复会话工件失败（exit=${proc.status}, signal=${proc.signal}）：${proc.stderr?.toString().trim() || ""}\n`,
       );
-      return false;
+      throw new Error(`下载会话工件失败（artifact_id=${artifactId}）`);
     }
 
     writeFileSync(zipPath, proc.stdout);
@@ -130,7 +130,10 @@ export class GitHubClient {
       maxBuffer: MAX_BUFFER_SIZE,
     });
     rmSync(zipPath, { force: true });
-    return unzipProc.status === 0;
+    if (unzipProc.status !== 0) {
+      throw new Error(`解压会话工件失败: ${unzipProc.stderr?.toString().trim() || ""}`);
+    }
+    return true;
   }
 }
 
