@@ -15,7 +15,8 @@ export interface ReviewConfig {
 }
 
 export interface PullRequestMetadata {
-  fork: boolean;
+  headRepo: string | null;
+  baseRepo: string;
   baseRef: string;
   state: string;
 }
@@ -54,7 +55,7 @@ export class GitHubClient {
       "api",
       `repos/${this.repo}/pulls/${this.prNumber}`,
       "--jq",
-      "{ fork: .head.repo.fork, baseRef: .base.ref, state: .state }",
+      "{ headRepo: (.head.repo.full_name // null), baseRepo: .base.repo.full_name, baseRef: .base.ref, state: .state }",
     ]);
     return JSON.parse(raw);
   }
@@ -128,6 +129,7 @@ export class GitHubClient {
     const unzipProc = spawnSync("unzip", ["-q", "-o", zipPath, "-d", sessionDir], {
       maxBuffer: MAX_BUFFER_SIZE,
     });
+    rmSync(zipPath, { force: true });
     return unzipProc.status === 0;
   }
 }
@@ -141,7 +143,7 @@ export function runReview(config: ReviewConfig): void {
     process.stdout.write(`PR #${prNumber} 未处于 open 状态，跳过审查。\n`);
     return;
   }
-  if (prMeta.fork) {
+  if (!prMeta.headRepo || prMeta.headRepo !== prMeta.baseRepo) {
     process.stdout.write(`PR #${prNumber} 来自外部 Fork 仓库，跳过凭据化审查。\n`);
     return;
   }
@@ -221,8 +223,12 @@ if (import.meta.main) {
     botToken: process.env.BOT_TOKEN || "",
   };
 
-  if (!config.prNumber || !config.repo || !config.botToken) {
-    process.stderr.write("Missing PR_NUMBER, GH_REPO, or BOT_TOKEN configuration.\n");
+  if (
+    !/^\d+$/.test(config.prNumber) ||
+    !/^[\w.-]+\/[\w.-]+$/.test(config.repo) ||
+    !config.botToken
+  ) {
+    process.stderr.write("Invalid or missing PR_NUMBER, GH_REPO, or BOT_TOKEN configuration.\n");
     process.exit(1);
   }
 
