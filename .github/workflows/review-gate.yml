@@ -117,7 +117,8 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
-            const MARKER = '<!-- review-gate: initial-trigger -->';
+            const CODERABBIT_MARKER = '<!-- review-gate: coderabbit-trigger -->';
+            const GREPTILE_MARKER = '<!-- review-gate: greptile-trigger -->';
 
             const currentPullRequest = await github.rest.pulls.get({
               owner,
@@ -139,20 +140,27 @@ jobs:
               issue_number: issueNumber,
               per_page: 100,
             });
-            if (comments.some((c) => c.body?.includes(MARKER))) {
-              core.info('跳过：已存在自动审查命令评论。');
-              return;
+            const hasCodeRabbit = comments.some((c) => c.body?.includes(CODERABBIT_MARKER));
+            const hasGreptile = comments.some((c) => c.body?.includes(GREPTILE_MARKER));
+
+            if (!hasCodeRabbit) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: `${CODERABBIT_MARKER}\n@coderabbitai review`,
+              });
+            } else {
+              core.info('跳过：已存在 CodeRabbit 审查命令评论。');
             }
 
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: `${MARKER}\n@coderabbitai review`,
-            });
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issueNumber,
-              body: `${MARKER}\n@greptileai review`,
-            });
+            if (!hasGreptile) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body: `${GREPTILE_MARKER}\n@greptileai review`,
+              });
+            } else {
+              core.info('跳过：已存在 Greptile 审查命令评论。');
+            }
