@@ -1,111 +1,94 @@
 name: AI Review
 
-# 自建 AI 审查流水线（pi 方案），当前默认跳过。
-#
-# 启用步骤——
-#   1. 专用账号登录 pi，导出 ~/.pi/agent/auth.json 内容到仓库 secret `PI_AUTH_JSON`
-#      （必须专用账号：Codex 等 OAuth provider 的 refresh token 会轮换，与本地共用会互相顶掉）
-#   2. 仓库 Settings → Secrets and variables → Actions → Variables 新建
-#      AI_REVIEW_ENABLED = true
-#
-# 触发方式：手动（workflow_dispatch），输入 PR 编号。
-# 如需"CI 全绿才审查"的硬门禁，把本 workflow 改为 workflow_run 监听 CI 完成，
-# 或在分支保护中将本 check 设为 required。
-
 on:
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "要审查的 PR 编号"
+        description: "Pull Request Number"
         required: true
-        type: number
-
-permissions:
-  contents: read
-  pull-requests: write
+        type: string
 
 concurrency:
-  group: ai-review-${{ inputs.pr_number }}
-  cancel-in-progress: false
+  group: ai-review-${{ github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: true
 
 jobs:
   review:
-    name: Pi Review
+    name: Timi Reviewer
     runs-on: ubuntu-latest
-    # 双重限制：变量开关 + 仅内部成员 PR（fork PR 的代码不可信，禁止接触凭据）
     if: >-
       vars.AI_REVIEW_ENABLED == 'true' &&
-      github.event.pull_request.head.repo.fork != true
-    timeout-minutes: 30
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event.issue.pull_request != null &&
+          contains(github.event.comment.body, '@timi-ai') &&
+          (github.event.comment.author_association == 'OWNER' ||
+           github.event.comment.author_association == 'MEMBER' ||
+           github.event.comment.author_association == 'COLLABORATOR')
+        )
+      )
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read
     steps:
-      # ⚠️ 安全模型：本 job 会检出被审 PR 的 head 并在其目录内执行 agent。
-      # 恶意 PR 可通过 .pi/ 配置、扩展或提示注入尝试接管 agent。
-      # 缓解措施：凭据写入晚于依赖安装；agent 提示词来自可信的 main 分支；
-      # 仅对内部成员 PR 启用。启用前请阅读 pi 官方安全文档评估风险。
-
-      # 显式检出被审 PR 的 head，不依赖 agent 隐式取 diff
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: 检出代码
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+          ref: refs/pull/${{ github.event.issue.number || inputs.pr_number }}/head
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - name: 恢复受信任的审查脚本
+        run: git checkout origin/main -- scripts/ai-review.ts
+
+      - name: 获取 Timi AI Bot 凭据
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.TIMI_AI_APP_ID }}
+          private-key: ${{ secrets.TIMI_AI_PRIVATE_KEY }}
+
+      - name: 安装 Bun 运行时
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: "1.3.14"
-      # 安装依赖必须先于凭据落盘：浮动依赖的安装代码不可接触 PI_AUTH_JSON；
-      # PI_CODING_AGENT_DIR 与运行时步骤保持一致，保证扩展装到 agent 实际读取的目录
-      - name: 安装 pi 与 review 扩展（跟随最新版）
+
+      - name: 安装依赖
         env:
           PI_CODING_AGENT_DIR: ${{ runner.temp }}/pi-agent
         run: |
           bun install -g @earendil-works/pi-coding-agent
           pi install git:github.com/earendil-works/pi-review
 
-      - name: 写入 pi 认证
+      - name: 写入认证
         env:
-          PI_AUTH_JSON: ${{ secrets.PI_AUTH_JSON }} # 经环境变量传递，避免内插进 shell
+          PI_AUTH_JSON: ${{ secrets.PI_AUTH_JSON }}
         run: |
           mkdir -p "$RUNNER_TEMP/pi-agent"
           printf '%s' "$PI_AUTH_JSON" > "$RUNNER_TEMP/pi-agent/auth.json"
           chmod 600 "$RUNNER_TEMP/pi-agent/auth.json"
 
-      - name: 恢复历史 Review 会话
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.inputs.pr_number }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/pi"
-          ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/artifacts?name=pi-session-pr-${PR_NUMBER}" --jq '.artifacts[0].id // empty')
-          if [ -n "$ARTIFACT_ID" ]; then
-            gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > "$RUNNER_TEMP/session.zip"
-            unzip -q -o "$RUNNER_TEMP/session.zip" -d "$RUNNER_TEMP/pi/"
-          fi
-
       - name: 运行审查
-        shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.inputs.pr_number }} # 经环境变量传入，避免内插进 shell
-          PI_CODING_AGENT_DIR: ${{ runner.temp }}/pi-agent
-        run: |
-          set -o pipefail
-          # 审查规范取自可信的 main 分支，而非被审 PR 的 head，防指令注入
-          git show origin/main:REVIEW_GUIDELINES.md > "$RUNNER_TEMP/guidelines.md"
-          pi -p --approve --session "$RUNNER_TEMP/pi/session.jsonl" "审查 PR #${PR_NUMBER}，
-          按以下规范输出分级 findings 和 verdict。不要修改任何代码。
-          规范内容：$(cat "$RUNNER_TEMP/guidelines.md")" | tee review-output.md
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number || inputs.pr_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: bun run scripts/ai-review.ts
 
-      - name: 保存审查会话
+      - name: 保存会话工件
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
-          name: pi-session-pr-${{ github.event.inputs.pr_number }}
-          path: ${{ runner.temp }}/pi/session.jsonl
+          name: pi-session-pr-${{ github.event.issue.number || inputs.pr_number }}
+          path: ${{ runner.temp }}/pi-session/
           retention-days: 15
           overwrite: true
-
-      - name: 发布审查意见
-        env:
-          PR_NUMBER: ${{ github.event.inputs.pr_number }}
-        run: gh pr comment "$PR_NUMBER" --body-file review-output.md

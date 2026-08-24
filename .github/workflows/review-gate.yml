@@ -101,12 +101,19 @@ jobs:
       group: review-gate-pr-${{ needs.resolve.outputs.number }}
       cancel-in-progress: false
     steps:
+      - name: 获取 Timi AI Bot 凭据
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.TIMI_AI_APP_ID }}
+          private-key: ${{ secrets.TIMI_AI_PRIVATE_KEY }}
+
       - name: 发布首次审查命令评论
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUMBER: ${{ needs.resolve.outputs.number }}
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ steps.bot-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
@@ -137,7 +144,7 @@ jobs:
             ]);
             const hasAutomaticCommand = comments.some(
               (comment) =>
-                comment.user?.login === 'github-actions[bot]' &&
+                (comment.user?.type === 'Bot' || comment.user?.login.endsWith('[bot]')) &&
                 automaticCommands.has(comment.body),
             );
 
