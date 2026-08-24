@@ -14,6 +14,12 @@ export interface ReviewConfig {
   botToken: string;
 }
 
+export interface PullRequestMetadata {
+  fork: boolean;
+  baseRef: string;
+  state: string;
+}
+
 export function parseReviewMode(eventName: string, commentBody: string): boolean {
   if (eventName === "issue_comment") {
     return /(?:^|\s)(?:-c|--continue)(?=\s|$)/.test(commentBody);
@@ -41,6 +47,16 @@ export class GitHubClient {
       throw new Error(`gh ${args.join(" ")} failed: ${proc.stderr?.trim() || ""}`);
     }
     return proc.stdout?.trim() || "";
+  }
+
+  getPullRequest(): PullRequestMetadata {
+    const raw = this.run([
+      "api",
+      `repos/${this.repo}/pulls/${this.prNumber}`,
+      "--jq",
+      "{ fork: .head.repo.fork, baseRef: .base.ref, state: .state }",
+    ]);
+    return JSON.parse(raw);
   }
 
   createPlaceholderComment(): string {
@@ -102,6 +118,9 @@ export class GitHubClient {
       },
     );
     if (proc.status !== 0) {
+      process.stderr.write(
+        `恢复会话工件失败（exit=${proc.status}, signal=${proc.signal}）：${proc.stderr?.toString().trim() || ""}\n`,
+      );
       return false;
     }
 
@@ -117,6 +136,17 @@ export function runReview(config: ReviewConfig): void {
   const { prNumber, repo, eventName, commentBody, runnerTemp, botToken } = config;
   const client = new GitHubClient(repo, prNumber, botToken);
 
+  const prMeta = client.getPullRequest();
+  if (prMeta.state !== "open") {
+    process.stdout.write(`PR #${prNumber} 未处于 open 状态，跳过审查。\n`);
+    return;
+  }
+  if (prMeta.fork) {
+    process.stdout.write(`PR #${prNumber} 来自外部 Fork 仓库，跳过凭据化审查。\n`);
+    return;
+  }
+
+  const baseRef = prMeta.baseRef || "main";
   const commentId = client.createPlaceholderComment();
   const sessionDir = join(runnerTemp, "pi-session");
   const outputFile = join(runnerTemp, "review-output.md");
@@ -143,7 +173,7 @@ export function runReview(config: ReviewConfig): void {
     if (wantsContinue && hasSession) {
       piArgs.push("-c");
     }
-    piArgs.push("--session-dir", sessionDir, "/review branch main");
+    piArgs.push("--session-dir", sessionDir, `/review branch ${baseRef}`);
 
     const piEnv: NodeJS.ProcessEnv = {
       PATH: process.env.PATH,

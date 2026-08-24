@@ -117,6 +117,7 @@ jobs:
           script: |
             const { owner, repo } = context.repo;
             const issueNumber = Number(process.env.PR_NUMBER);
+            const MARKER = '<!-- review-gate: initial-trigger -->';
 
             const currentPullRequest = await github.rest.pulls.get({
               owner,
@@ -132,15 +133,26 @@ jobs:
               return;
             }
 
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            if (comments.some((c) => c.body?.includes(MARKER))) {
+              core.info('跳过：已存在自动审查命令评论。');
+              return;
+            }
+
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: issueNumber,
-              body: '@coderabbitai review',
+              body: `${MARKER}\n@coderabbitai review`,
             });
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: issueNumber,
-              body: '@greptileai review',
+              body: `${MARKER}\n@greptileai review`,
             });
