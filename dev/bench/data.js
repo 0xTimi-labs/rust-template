@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787590118650,
+  "lastUpdate": 1787592935581,
   "repoUrl": "https://github.com/0xTimi-labs/rust-template",
   "entries": {
     "Benchmark": [
@@ -148,6 +148,36 @@ window.BENCHMARK_DATA = {
           {
             "name": "parse_setting/typical-line",
             "value": 30,
+            "range": "± 0",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "0xtimi2233@gmail.com",
+            "name": "0xTimi2233",
+            "username": "0xTimi2233"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8270519f7ef485779278bb99ffc3abb2d4da9f03",
+          "message": "docs: 补充开源社区健康规范与标准模板 (#15)\n\n* docs: 补充开源社区健康规范与标准模板\n\n添加 Contributor Covenant 行为准则、贡献指南、安全政策与结构化 Issue 表单模板。\n\n* docs: 规范化全量社区健康资产为中文并修复 E2E 预览超时\n\n* docs: 移除冗余的 AGENTS.md 并更新主页文档索引\n\n* docs: 简化缺陷报告表单并移除内部组件选择",
+          "timestamp": "2026-08-24T17:33:04Z",
+          "tree_id": "bfde7ecb82b086ff8758ed7863344227bc26fc6f",
+          "url": "https://github.com/0xTimi-labs/rust-template/commit/8270519f7ef485779278bb99ffc3abb2d4da9f03"
+        },
+        "date": 1787592934816,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "parse_setting/typical-line",
+            "value": 33,
             "range": "± 0",
             "unit": "ns/iter"
           }
