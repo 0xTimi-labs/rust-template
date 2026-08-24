@@ -59,9 +59,10 @@ bun run e2e
 ## 仓库设置与上云清单
 
 新项目创建后，请参考文档完成 3 分钟极速配置：
-* 📖 [新项目搭建全流程指南](docs/project-setup-guide.md)：分支保护规则集、Merge Queue、AI 审查 App 配置与常见坑。
-* 📖 [GitHub Actions 配置规范](docs/github-actions-setup-guide.md)：流水线架构规范、凭据管理与最佳实践。
-* 🤖 [AI Agent 项目上下文协议](AGENTS.md)：给 AI 编程助手（Cursor / Claude / Copilot）的规范速查表。
+* [新项目搭建全流程指南](docs/project-setup-guide.md)：分支保护规则集、Merge Queue、AI 审查 App 配置与常见坑。
+* [GitHub Actions 配置规范](docs/github-actions-setup-guide.md)：流水线架构规范、凭据管理与最佳实践。
+* [贡献指南](CONTRIBUTING.md)：本地开发、环境基线、代码规范与提交指引。
+* [安全策略](SECURITY.md)：支持版本矩阵与安全漏洞私密报告渠道。
 
 ---
 
