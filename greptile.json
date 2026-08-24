@@ -1,0 +1,4 @@
+{
+  "instructions": "始终使用简体中文撰写审查评论、总结和修复建议，代码与标识符保持原样。审查规范见仓库根目录的 REVIEW_GUIDELINES.md：按 P0/P1/P2 分级给出发现，聚焦正确性、安全性、可测试性；本项目代码由 AI 辅助生成，重点警惕幻觉 API 与形式化空洞测试。",
+  "skipReview": "AUTOMATIC"
+}

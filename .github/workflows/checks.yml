@@ -1,0 +1,180 @@
+name: Checks
+
+# 测试与构建门禁：由 ci.yml 通过 workflow_call 编排调用，
+# 触发时机（PR / push main / merge queue / 周一定时）由 CI workflow 统一管理。
+
+on:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # 格式检查：最快的一道检查
+  fmt:
+    name: 格式检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false # 除非后续步骤需要 git push，一律不持久化凭证
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master（工具链版本由 rust-toolchain.toml 控制）
+        with:
+          toolchain: "1.98.0"
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  # 跨平台测试矩阵：开源仓库三平台全部免费
+  test:
+    name: 测试 (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master（工具链版本由 rust-toolchain.toml 控制）
+        with:
+          toolchain: "1.98.0"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo test --workspace --all-features --locked
+
+  # Lint 门禁
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master（工具链版本由 rust-toolchain.toml 控制）
+        with:
+          toolchain: "1.98.0"
+          components: clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  # 测试覆盖率上报 Codecov（informational，不做硬性卡关）；
+  # 趋势记录型检查，merge_group 不重复执行
+  coverage:
+    name: 覆盖率
+    runs-on: ubuntu-latest
+    if: github.event_name != 'merge_group'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master（工具链版本由 rust-toolchain.toml 控制）
+        with:
+          toolchain: "1.98.0"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: taiki-e/install-action@a2a5f6e99e1a31540baa0468acfa302cff0f359f # v2.86.4
+        with:
+          tool: cargo-llvm-cov
+      - run: cargo llvm-cov --workspace --all-features --locked --lcov --output-path lcov.info
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          files: lcov.info
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }} # 公开仓库可不填，填了报告更稳定
+
+  # 前端构建（Renovate 会管理这里的 bun 依赖）
+  web:
+    name: 前端构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.14" # Bun 运行时版本：手工升级，升级时同步提交 bun.lock
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: web-dist
+          path: web/dist/
+          retention-days: 7
+
+  # UI e2e：图像快照是像素级比对，各操作系统字体与渲染有差异，
+  # 有意只在 ubuntu-latest 运行，基准图按平台分别维护
+  e2e:
+    name: E2E 测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.3.14" # Bun 运行时版本：手工升级，升级时同步提交 bun.lock
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: 缓存 Playwright 浏览器内核
+        uses: actions/cache@3edfce9056124e459a23f683a21433670d47daca # v4.3.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('web/bun.lock') }}
+      - name: 安装 Playwright 浏览器及系统依赖
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            bunx playwright install-deps chromium
+          else
+            bunx playwright install --with-deps chromium
+          fi
+      - name: 运行 e2e（构建与 webServer 生命周期由 web 脚本统一管理）
+        run: bun run e2e
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 7
+
+  # 性能基准：只在 main 上跑并写入历史基线（gh-pages 分支）
+  # PR 阶段不跑——没有历史可比对，纯烧时间
+  bench:
+    name: 基准测试
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master（工具链版本由 rust-toolchain.toml 控制）
+        with:
+          toolchain: "1.98.0"
+      # 基准每次全量重跑（rust-cache 的 criterion 数据恢复会损坏 sample.json）
+      - name: 运行基准并输出 bencher 格式（github-action-benchmark 的解析要求）
+        shell: bash
+        run: set -o pipefail && cargo bench -p oss-core --bench parse -- --output-format bencher | tee bench_output.txt
+      - uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          tool: cargo
+          output-file-path: bench_output.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: 200%     # 标准 runner 噪声大，只抓大退化
+          comment-on-alert: true

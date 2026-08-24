@@ -1,0 +1,160 @@
+name: Review Gate
+
+# 仅在 CI 成功完成且关联 PR 仍为 open、head 未变化时，首次自动发布 AI 审查命令评论。
+# 安全扫描已并入 CI workflow，CI 成功即代表全部门禁通过；后续提交由维护者手动评论触发审查。
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  resolve:
+    name: 定位首次审查目标
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    permissions:
+      pull-requests: read
+    outputs:
+      found: ${{ steps.pr.outputs.found }}
+      number: ${{ steps.pr.outputs.number }}
+    steps:
+      - name: 解析并校验关联 PR
+        id: pr
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const run = context.payload.workflow_run;
+            const headSha = run.head_sha;
+            const matchesRun = (pullRequest) =>
+              pullRequest.state === 'open' &&
+              pullRequest.draft === false &&
+              pullRequest.head.sha === headSha &&
+              pullRequest.base.repo.full_name === `${owner}/${repo}`;
+
+            let pullRequest;
+            const candidateNumbers = (run.pull_requests ?? [])
+              .map((candidate) => candidate.number)
+              .filter(Number.isInteger);
+
+            for (const number of candidateNumbers) {
+              const response = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: number,
+              });
+              if (matchesRun(response.data)) {
+                pullRequest = response.data;
+                break;
+              }
+            }
+
+            if (!pullRequest && run.head_repository?.owner?.login && run.head_branch) {
+              const candidates = await github.paginate(github.rest.pulls.list, {
+                owner,
+                repo,
+                state: 'open',
+                head: `${run.head_repository.owner.login}:${run.head_branch}`,
+                per_page: 100,
+              });
+              pullRequest = candidates.find(matchesRun);
+            }
+
+            if (!pullRequest) {
+              const associated = await github.paginate(
+                github.rest.repos.listPullRequestsAssociatedWithCommit,
+                {
+                  owner,
+                  repo,
+                  commit_sha: headSha,
+                  per_page: 100,
+                },
+              );
+              pullRequest = associated.find(matchesRun);
+            }
+
+            if (!pullRequest) {
+              core.info(`跳过：没有仍处于 open 且 head.sha 为 ${headSha} 的 PR。`);
+              core.setOutput('found', 'false');
+              return;
+            }
+
+            core.info(`关联 PR #${pullRequest.number}，head.sha 校验通过。`);
+            core.setOutput('found', 'true');
+            core.setOutput('number', String(pullRequest.number));
+
+  trigger:
+    name: 发布首次 AI 审查命令
+    needs: resolve
+    if: needs.resolve.outputs.found == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pull-requests: write
+    concurrency:
+      group: review-gate-pr-${{ needs.resolve.outputs.number }}
+      cancel-in-progress: false
+    steps:
+      - name: 发布首次审查命令评论
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PR_NUMBER: ${{ needs.resolve.outputs.number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const issueNumber = Number(process.env.PR_NUMBER);
+
+            const currentPullRequest = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: issueNumber,
+            });
+            if (
+              currentPullRequest.data.state !== 'open' ||
+              currentPullRequest.data.draft ||
+              currentPullRequest.data.head.sha !== context.payload.workflow_run.head_sha
+            ) {
+              core.info('跳过：发布前 PR 未处于 Ready 状态或 head SHA 已变化。');
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number: issueNumber,
+              per_page: 100,
+            });
+            const automaticCommands = new Set([
+              '@coderabbitai review',
+              '@greptileai review',
+            ]);
+            const hasAutomaticCommand = comments.some(
+              (comment) =>
+                comment.user?.login === 'github-actions[bot]' &&
+                automaticCommands.has(comment.body),
+            );
+
+            if (hasAutomaticCommand) {
+              core.info('跳过：PR 已执行过首次自动审查触发。');
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: '@coderabbitai review',
+            });
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: '@greptileai review',
+            });
