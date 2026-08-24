@@ -8,16 +8,16 @@
 
 ### 方式一：GitHub 官方模板（推荐）
 1. 点击仓库右上角 **【Use this template】→ 【Create a new repository】**；
-2. 克隆新项目到本地后，运行一键初始化脚本（自动完成包名、仓库重命名并自毁）：
+2. 克隆新项目到本地后，运行一键初始化脚本（跨平台自动完成包名、仓库重命名并自毁）：
    ```bash
-   ./scripts/setup.sh <你的GitHub组织/用户名> <你的新项目名> "<项目简要描述>"
+   python3 scripts/setup.py <你的GitHub组织/用户名> <你的新项目名> "<项目简要描述>"
    ```
 
 ### 方式二：直接克隆
 ```bash
 git clone https://github.com/0xTimi-labs/rust-template.git my-project
 cd my-project
-./scripts/setup.sh <你的GitHub组织/用户名> my-project "我的新项目"
+python3 scripts/setup.py <你的GitHub组织/用户名> my-project "我的新项目"
 ```
 
 ---
