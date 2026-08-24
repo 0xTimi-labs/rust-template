@@ -1,29 +1,29 @@
-name: Feature Request
-description: Suggest an idea, enhancement, or new feature for the project.
+name: 功能建议 (Feature Request)
+description: 为项目提出新的功能需求或架构改进建议。
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for proposing a feature or enhancement.
+        感谢提出功能改进建议。
   - type: textarea
     id: problem
     attributes:
-      label: Problem Statement
-      description: Is your feature request related to a problem? Please provide a clear and concise description.
+      label: 需求背景与痛点
+      description: 该建议是否针对当前存在的特定问题或痛点？请做清晰描述。
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: Proposed Solution
-      description: Describe the solution or capability you would like to see added.
+      label: 建议方案
+      description: 详细描述您期望实现的功能、API 设计或行为表现。
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives Considered
-      description: Any alternative solutions or workarounds you have considered.
+      label: 考虑过的替代方案
+      description: 是否考虑过其他备选方案或临时变通方法？
     validations:
       required: false

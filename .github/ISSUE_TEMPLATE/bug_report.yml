@@ -1,52 +1,57 @@
-name: Bug Report
-description: Report a reproducible bug or defect in the codebase.
+name: 缺陷报告 (Bug Report)
+description: 提交可在代码库中稳定复现的缺陷或异常行为。
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting a bug. Please fill in the details below to help us investigate.
-  - type: input
+        感谢提交缺陷报告。请尽可能详尽地填写以下信息以协助排查与修复。
+  - type: dropdown
     id: component
     attributes:
-      label: Affected Component
-      description: Specify the affected crate or subsystem (e.g., core, cli, web, ci).
-      placeholder: "e.g., core / cli / web"
+      label: 受影响模块
+      description: 选择发生问题的组件或子系统。
+      options:
+        - "crates/core (核心逻辑)"
+        - "crates/cli (命令行入口)"
+        - "web (前端界面)"
+        - "ci (.github 自动化流水线)"
+        - "其他"
     validations:
       required: true
   - type: textarea
     id: description
     attributes:
-      label: Description
-      description: A clear and concise description of the bug.
+      label: 缺陷描述
+      description: 清晰、简要地描述遇到的异常行为。
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
-      label: Steps to Reproduce
-      description: Detailed steps or code snippet to reproduce the issue.
+      label: 复现步骤
+      description: 提供可逐步复现该问题的详细步骤或最小代码片段。
       placeholder: |
-        1. Run command '...'
-        2. Provide input '...'
-        3. See error
+        1. 执行命令 '...'
+        2. 输入参数 '...'
+        3. 观察到错误输出 '...'
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected Behavior
-      description: What you expected to happen.
+      label: 期望行为
+      description: 描述在正常情况下应当出现的预期结果。
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
-      label: Environment Details
-      description: Rust version, OS, browser, or runtime version.
+      label: 运行环境
+      description: 操作系统、Rust 版本或 Bun 运行时信息。
       placeholder: |
-        * OS: macOS / Linux / Windows
-        * Rust version: 1.98.0
-        * Bun version: 1.4.0
+        * 操作系统: macOS / Linux / Windows
+        * Rust 版本: 1.98.0
+        * Bun 版本: 1.4.0
     validations:
       required: false

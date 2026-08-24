@@ -12,10 +12,10 @@ export default defineConfig({
   // webServer 统一管理 preview 生命周期：CI 与本地（bun run e2e）行为完全一致，
   // 无需手工启动服务或编写轮询等待逻辑
   webServer: {
-    command: "bunx --bun vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    command: "bun run preview",
     url: "http://127.0.0.1:4173",
     reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    timeout: 120_000,
   },
   use: {
     baseURL: "http://127.0.0.1:4173",

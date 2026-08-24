@@ -1,33 +1,31 @@
-# Security Policy
+# 安全策略
 
-## Supported Versions
+## 支持的版本
 
-Security updates and patches are provided for the following versions:
+本项目为以下版本提供安全维护与漏洞补丁：
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| < 0.1.0 | :x:                |
+| 版本 | 是否支持安全更新 |
+| ---- | ---------------- |
+| 0.1.x | 支持 |
+| < 0.1.0 | 不再支持 |
 
-## Reporting a Vulnerability
+## 漏洞报告渠道
 
-We take the security of this project seriously. If you believe you have discovered a security vulnerability, please follow responsible disclosure practices:
+本项目高度重视安全性。若发现潜在安全漏洞，请遵循负责任的披露流程：
 
-1. **Do not open a public GitHub issue** for security vulnerabilities.
-2. Report the vulnerability via [GitHub Private Vulnerability Reporting](https://github.com/0xTimi-labs/rust-template/security/advisories/new).
-3. If Private Vulnerability Reporting is unavailable, contact the repository maintainers directly.
+1. **严禁通过公开 GitHub Issue 提交安全漏洞**；
+2. 请通过 [GitHub 私密漏洞提报通道（Private Vulnerability Reporting）](https://github.com/0xTimi-labs/rust-template/security/advisories/new) 提交报告；
+3. 若私密通道不可用，请直接联系仓库管理员。
 
-### Information to Include
+### 报告应包含的信息
 
-When reporting a vulnerability, please provide the following details:
+* 漏洞简述及其潜在影响范围；
+* 详细的复现步骤或最小可复现用例（PoC）；
+* 受影响的模块、组件或版本；
+* 建议的修复方案或临时规避措施（如有）。
 
-* Description of the vulnerability and its potential impact
-* Steps to reproduce the issue or a minimal proof of concept
-* Affected components or versions
-* Any possible mitigations or proposed fixes
+### 响应与处置承诺
 
-### Response Timeline
-
-* **Acknowledgment**: We aim to acknowledge receipt of security reports within 48 hours.
-* **Assessment**: We will assess the report and provide updates on confirmation and mitigation.
-* **Release**: Once a patch is developed and verified, a security advisory and patched release will be published.
+* **接收确认**：维护团队将在 48 小时内确认收到报告；
+* **评估与验证**：团队将组织评估漏洞严重程度并制定修复方案；
+* **发布修复**：修复经验证后，将发布安全公告（Security Advisory）并推出对应补丁版本。
