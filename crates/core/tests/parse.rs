@@ -44,7 +44,18 @@ fn handles_valid_positive_number() {
         parse_setting("port = 8080"),
         Ok(Setting {
             name: "port".into(),
-            value: 8080
+            value: 8080,
+        })
+    );
+}
+
+#[test]
+fn handles_zero_value() {
+    assert_eq!(
+        parse_setting("offset = 0"),
+        Ok(Setting {
+            name: "offset".into(),
+            value: 0,
         })
     );
 }
