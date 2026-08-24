@@ -196,10 +196,13 @@ export function runReview(config: ReviewConfig): void {
     }
 
     const output = proc.stdout?.trim() || "未检测到审查意见。";
-    const body =
-      output.length > MAX_COMMENT_LENGTH
-        ? `${output.slice(0, MAX_COMMENT_LENGTH)}\n\n---\n审查内容超出评论长度上限，已截断。完整内容请查看 Actions 运行日志。`
-        : output;
+    let body = output;
+    if (output.length > MAX_COMMENT_LENGTH) {
+      process.stdout.write(
+        `审查输出超出评论上限（${output.length} 字符），完整内容如下：\n${output}\n`,
+      );
+      body = `${output.slice(0, MAX_COMMENT_LENGTH)}\n\n---\n审查内容超出评论长度上限，已截断。完整内容请查看 Actions 运行日志。`;
+    }
 
     writeFileSync(outputFile, body, "utf-8");
     client.updateComment(commentId, outputFile);

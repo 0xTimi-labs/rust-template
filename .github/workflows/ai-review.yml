@@ -42,8 +42,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: 恢复受信任的审查脚本
-        run: git checkout origin/main -- scripts/ai-review.ts 2>/dev/null || true
+      - name: 恢复受信任的审查资源
+        run: git checkout origin/main -- scripts/ai-review.ts REVIEW_GUIDELINES.md 2>/dev/null || true
 
       - name: 获取 Timi AI Bot 凭据
         id: bot-token
